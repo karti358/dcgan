@@ -1,0 +1,15 @@
+[project]
+name = "dcgan"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flax==0.10.4",
+    "grain==0.2.12",
+    "jax==0.4.34",
+    "matplotlib>=3.10.6",
+    "opencv-python>=4.12.0.88",
+    "orbax-checkpoint==0.11.5",
+    "pathlib>=1.0.1",
+]
