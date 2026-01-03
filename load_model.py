@@ -51,25 +51,35 @@ class ManageCheckpoints:
         
         return nnx.merge(graphdef, restored_state)
 
+
+devices = np.array(jax.devices())
+if devices.shape[0] == 2:
+    devices = devices.reshape(2, 1)
+elif devices.shape[0] == 8:
+    devices = devices.reshape(4, 2)
+else:
+    devices = devices[:, np.newaxis]
+
 MESH = jax.sharding.Mesh(
-    devices=np.array(jax.devices()).reshape(4, 2),
+    devices=devices,
     axis_names=('x', "y"),
 )
 
-generator = Generator(
-    latent_channel_size = LATENT_CHANNEL_SIZE,
-    output_channel_size = NUM_CHANNELS,
-    feature_map_size = GENERATOR_FEATURE_SIZE,
-    rngs = nnx.Rngs(42)
-)
+with MESH:
+    generator = Generator(
+        latent_channel_size = LATENT_CHANNEL_SIZE,
+        output_channel_size = NUM_CHANNELS,
+        feature_map_size = GENERATOR_FEATURE_SIZE,
+        rngs = nnx.Rngs(42)
+    )
 
-g_checkpoint_manager = ManageCheckpoints(
-    base_dir="/mnt/e/Class/Projects/dcgan/checkpoints/generator"
-)
+    g_checkpoint_manager = ManageCheckpoints(
+        base_dir="/mnt/e/Class/Projects/dcgan/checkpoints/generator"
+    )
 
-generator = g_checkpoint_manager.load_model(
-    generator,
-    "1757344158_state",
-    mesh = MESH
-)
-# nnx.display(generator)
+    generator = g_checkpoint_manager.load_model(
+        generator,
+        "1757344158_state",
+        mesh = MESH
+    )
+    # nnx.display(generator)

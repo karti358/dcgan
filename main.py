@@ -1,45 +1,58 @@
+import argparse
 from load_model import generator
 import jax.numpy as jnp
 import numpy as np
 import jax
 import cv2
+import time
+import os
+import random
+from uuid import uuid4
 
-NUM_CHANNELS = 3
-LATENT_CHANNEL_SIZE = 100
-NUM_SAMPLES = 6
+def main(output_path, seed):
+    # Ensure output_path has a valid extension
+    if not os.path.splitext(output_path)[1]:
+        output_path += ".png"
 
-keys = jax.random.split(
-    jax.random.key(8897),
-    NUM_SAMPLES
-)
+    NUM_CHANNELS = 3
+    LATENT_CHANNEL_SIZE = 100
 
-noises = []
-for i in range(NUM_SAMPLES):
-    noises.append(
-        jax.random.normal(
-            keys[i],
-            shape=(1, 1, 1, LATENT_CHANNEL_SIZE),
-            dtype=jnp.float32
-        )
+    key = jax.random.key(seed)
+
+    noise = jax.random.normal(
+        key,
+        shape=(1, 1, 1, LATENT_CHANNEL_SIZE),
+        dtype=jnp.float32
     )
 
-noises = jnp.concatenate(
-    noises,
-    axis = 0
-)
+    images = generator(noise)
 
-images = generator(noises)
+    mean = np.array([0.5, 0.5, 0.5])[np.newaxis, np.newaxis, ...]
+    std = np.array([0.5, 0.5, 0.5])[np.newaxis, np.newaxis, ...]
 
-mean = np.array([0.5, 0.5, 0.5])[np.newaxis, np.newaxis, ...]
-std = np.array([0.5, 0.5, 0.5])[np.newaxis, np.newaxis, ...]
-
-for i in range(NUM_SAMPLES):
-    img = (mean + images[i] * std) * 255.0
+    img = (mean + images[0] * std) * 255.0
     img = img.astype(np.uint8)
     img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-    is_successful = cv2.imwrite(f'sample_{i}.png', img)
+    is_successful = cv2.imwrite(output_path, img)
     if is_successful:
-        print("RGB image successfully converted and saved as red_image.png")
+        print(f"Image successfully saved to {output_path}")
     else:
         print("Error: Image failed to save.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate an image using a DCGAN.')
+    parser.add_argument(
+        '--output',
+        type=str,
+        default= f"./outputs/{uuid4().hex}.png",
+        help='Output file path for the generated image.'
+    )
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default = random.randint(1, 10000000),
+        help='Random seed for key generation.'
+    )
+    args = parser.parse_args()
+    main(args.output, args.seed)
